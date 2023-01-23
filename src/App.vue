@@ -5,6 +5,18 @@ import StationButton from "./components/StationButton.vue";
 <template>
   <div id="app">
 
+    <div>
+      <select v-model="slotsSelect">
+        <option value="">NONE</option>
+        <option v-for="slot in storageSlots" :key="slot" :value="slot">{{ slot }}</option>
+        <option value="add">ADD SLOT</option>
+        <option value="remove">REMOVE SLOT</option>
+      </select>
+      <button @click="storageSave">save</button>
+      <button @click="storageLoad">load</button>
+    </div>
+    <hr />
+
     <div class="row">
       <div class="column">
         <StationButton name="Myllylä" @add="add" @remove="remove" />
@@ -14,12 +26,17 @@ import StationButton from "./components/StationButton.vue";
       <div class="column">
         <StationButton name="Honkala" @add="add" @remove="remove" />
         <StationButton name="Haapasalmi" @add="add" @remove="remove" />
+        <StationButton name="Santala" @add="add" @remove="remove" />
         <StationButton name="Tervapuro" @add="add" @remove="remove" />
         <StationButton name="Jylppy" @add="add" @remove="remove" />
       </div>
       <StationButton name="Lassila" @add="add" @remove="remove" />
       <StationButton name="Järvela" @add="add" @remove="remove" />
       <div class="column">
+        <StationButton name="Koivulahti" @add="add" @remove="remove" />
+        <StationButton name="Vaaranmaa" @add="add" @remove="remove" />
+        <StationButton name="Korkia-aho" @add="add" @remove="remove" />
+        <StationButton name="Mattila" @add="add" @remove="remove" />
         <StationButton name="Nurmiainen" @add="add" @remove="remove" />
         <StationButton name="Marjamaa" @add="add" @remove="remove" />
         <StationButton name="Aittola" @add="add" @remove="remove" />
@@ -45,26 +62,46 @@ import StationButton from "./components/StationButton.vue";
       </div>
     </div>
 
+    <hr />
+
     {{ followingStations.toString() }}
 
     <input type="text" name="train" id="train" v-model="trainName">
     <input type="checkbox" name="callingAtAll" id="callingAtAll" v-model="callingAtAll">
     <label for="callingAtAll">Pysähdymme kaikilla asemalla</label>
-    <input type="text" name="tracks" id="tracks" v-model="tracks" placeholder="tracks (separate by comma)">
 
-    <p>
-      Hyvät matkustajat, tama on {{ trainName }} {{ direction }}. {{ callingAt }} Hyvää matkaa!
-      {{ announcedStations }} Hyvät matkustajat, saavumme {{ direction }}. Kiitämme
-      kaikkia matkustajia, tervetuloa uudelleen.
-    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>station</th>
+          <th>track</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(station, i) in followingStations" :key="i">
+          <td>{{ station }}</td>
+          <td><input type="number" min="1" v-model.number="tracksArr[i]" /></td>
+        </tr>
+      </tbody>
+    </table>
 
-    <p>
-      <span v-for="(ann) in stationAnnouncements" :key="ann">
-        {{ ann }} <br />
-      </span>
-    </p>
+    <div v-if="false">
+      <p>
+        Hyvät matkustajat, tama on {{ trainName }} {{ direction }}. {{ callingAt }} Hyvää matkaa!
+        {{ announcedStations }} Hyvät matkustajat, saavumme {{ direction }}. Kiitämme
+        kaikkia matkustajia, tervetuloa uudelleen.
+      </p>
+
+      <p>
+        <span v-for="(ann) in stationAnnouncements" :key="ann">
+          {{ ann }} <br />
+        </span>
+      </p>
+
+    </div>
 
     <hr />
+
     <section>
       <p>
         {{ xml_st }}
@@ -106,13 +143,15 @@ export default {
         'Toikola': 'Toikolaan',
         'Koivulahti': 'Koivulahteen'
       },
-      tracks: '',
+      tracksArr: [],
       xml_st: `<speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xmlns:emo="http://www.w3.org/2009/10/emotionml" version="1.0" xml:lang="en-US">`,
       xml_en: `</speak>`,
       xml_train_st: `<voice name="fi-FI-HarriNeural">`,
       xml_train_en: `</voice>`,
       xml_plat_st: `<voice name="fi-FI-SelmaNeural">`,
       xml_plat_en: `</voice>`,
+      slotsSelect: '',
+      storageSlots: Object.keys(localStorage),
       presets: [
         { stations: [], tracks: "" }
       ]
@@ -136,12 +175,61 @@ export default {
         and = `, ja ${st.pop()}`
       }
       return this.callingAtAll ? 'Pysähdymme kaikilla asemalla. ' : ['Pysäkkimme ovat: ', st.map(x => x).join(', '), and, '.'].join('')
+    },
+    storageSave() {
+      if (!this.slotsSelect || this.slotsSelect === 'add' || this.slotsSelect === 'remove') {
+        alert('Please select a slot! Settings have not been saved.')
+        return
+      }
+      localStorage.setItem(String(this.slotsSelect), JSON.stringify({
+        followingStations: this.followingStations,
+        trainName: this.trainName,
+        callingAtAll: this.callingAtAll,
+        tracksArr: this.tracksArr
+      }))
+      alert(`Saved settings to ${this.slotsSelect}!`)
+    },
+    storageLoad() {
+      if (!this.slotsSelect || this.slotsSelect === 'add' || this.slotsSelect === 'remove') {
+        alert('Please select a slot! Settings have not been loaded.')
+        return
+      }
+      try {
+        const settings = JSON.parse(localStorage.getItem(this.slotsSelect))
+        if (settings.followingStations) this.followingStations = settings.followingStations
+        if (settings.trainName) this.trainName = settings.trainName
+        if (settings.callingAtAll) this.callingAtAll = settings.callingAtAll
+        if (settings.tracksArr) this.tracksArr = settings.tracksArr
+        alert(`Loaded settings from ${this.slotsSelect}!`)
+      } catch (error) {
+        console.log(error);
+        alert('Loading failed, slot is corrupted!')
+      }
+    }
+  },
+  watch: {
+    slotsSelect() {
+      switch (this.slotsSelect) {
+        case 'add':
+          const newSlotName = prompt('Add a new slot:')
+          if (newSlotName && newSlotName !== 'add' && newSlotName !== 'remove' && !localStorage[String(newSlotName)]) {
+            localStorage.setItem(String(newSlotName), '')
+            this.storageSlots.push(String(newSlotName))
+          } else {
+            alert("Invalid name! Slot has not been created.")
+          }
+          break;
+        case 'remove':
+          const slotName = String(prompt('Remove an existing slot:'))
+          localStorage.removeItem(slotName)
+          this.storageSlots = this.storageSlots.filter(x => x !== slotName)
+          break;
+        default:
+          break;
+      }
     }
   },
   computed: {
-    tracksArr() {
-      return this.tracks.split(',').map(x => parseInt(x.trim())) || []
-    },
     announcedStations() {
       return this.announcedStationsArr.join('')
     },
