@@ -151,7 +151,7 @@ export default {
       xml_plat_st: `<voice name="fi-FI-SelmaNeural">`,
       xml_plat_en: `</voice>`,
       slotsSelect: '',
-      storageSlots: Object.keys(localStorage),
+      storageSlots: Object.keys(localStorage).sort(),
       presets: [
         { stations: [], tracks: "" }
       ]
@@ -223,6 +223,7 @@ export default {
             this.slotsSelect = String(newSlotName)
           } else {
             alert("Invalid name! Slot has not been created.")
+            this.slotsSelect = ''
           }
           break;
         case 'remove':
