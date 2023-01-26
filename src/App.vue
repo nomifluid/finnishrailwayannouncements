@@ -56,7 +56,7 @@ import StationButton from "./components/StationButton.vue";
       <StationButton name="Tuppula" @add="add" @remove="remove" />
       <StationButton name="Kala" @add="add" @remove="remove" />
       <div class="column">
-        <StationButton name="Koivulahti" @add="add" @remove="remove" />
+        <StationButton name="Koivulahti " @add="add" @remove="remove" />
         <StationButton name="Viljakanpohja" @add="add" @remove="remove" />
         <StationButton name="Toikola" @add="add" @remove="remove" />
       </div>
@@ -162,7 +162,9 @@ export default {
       this.followingStations.push(name)
     },
     remove(name) {
-      this.followingStations.splice(this.followingStations.findLastIndex(x => x === name), 1)
+      const index = this.followingStations.findLastIndex(x => x === name)
+      this.tracksArr.splice(index, 1)
+      this.followingStations.splice(index, 1)
     },
     generateCallingAt(offset) {
       const st = [...this.followingStations]
@@ -177,6 +179,9 @@ export default {
       return this.callingAtAll ? 'Pysähdymme kaikilla asemalla. ' : ['Pysäkkimme ovat: ', st.map(x => x).join(', '), and, '.'].join('')
     },
     storageSave() {
+      if (!confirm(`Are you sure you want to override ${this.slotsSelect}?`)) {
+        return
+      }
       if (!this.slotsSelect || this.slotsSelect === 'add' || this.slotsSelect === 'remove') {
         alert('Please select a slot! Settings have not been saved.')
         return
@@ -215,6 +220,7 @@ export default {
           if (newSlotName && newSlotName !== 'add' && newSlotName !== 'remove' && !localStorage[String(newSlotName)]) {
             localStorage.setItem(String(newSlotName), '')
             this.storageSlots.push(String(newSlotName))
+            this.slotsSelect = String(newSlotName)
           } else {
             alert("Invalid name! Slot has not been created.")
           }
@@ -223,6 +229,7 @@ export default {
           const slotName = String(prompt('Remove an existing slot:'))
           localStorage.removeItem(slotName)
           this.storageSlots = this.storageSlots.filter(x => x !== slotName)
+          this.slotsSelect = ''
           break;
         default:
           break;
@@ -244,7 +251,7 @@ export default {
       const st = [...this.followingStations]
       st.pop()
       const prefix = `${this.trainName} ${this.direction} lähtee radalta`
-      const terminus = `${this.trainName} ${this.direction} saapuu radalta ${this.tracksArr[this.followingStations.length - 1] || 1}. Juna päättyy tähän.`
+      const terminus = `${this.trainName} ${this.direction} saapuu radalta ${this.tracksArr[this.followingStations.length - 1] || 1}.`
       const stAnns = st.map((x, i) => {
 
         return `${prefix} ${this.tracksArr[i] || 1}. ${this.generateCallingAt(i)}`
